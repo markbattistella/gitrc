@@ -2,9 +2,9 @@
 	"name": "@markbattistella/gitrc",
 	"description": "Change between different .gitconfig files",
 	"version": "1.0.0",
-	"main": "bin/index.js",
+	"main": "./gitrc.js",
 	"author": "Mark Battistella (https://twitter.com/markbattistella)",
-	"license": "GNU GPLv3",
+	"license": "MIT",
 	"homepage": "https://github.com/markbattistella/gitrc",
 	"repository": {
 		"type": "git",
@@ -17,7 +17,7 @@
 	},
 	"scripts": {},
 	"bin": {
-		"gitrc": "bin/index.js"
+		"gitrc": "./gitrc.js"
 	},
 	"preferGlobal": true,
 	"keywords": [
