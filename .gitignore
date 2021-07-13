@@ -1,0 +1,6 @@
+.DS_Store
+.markdownlintrc
+node_modules
+
+# to go
+reference-index.js
