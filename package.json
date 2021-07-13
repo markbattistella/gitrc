@@ -5,13 +5,13 @@
 	"main": "bin/index.js",
 	"author": "Mark Battistella (https://twitter.com/markbattistella)",
 	"license": "GNU GPLv3",
-	"homepage": "https://github.com/markbattistella/gitrc",
+	"homepage": "https://github.com/markbattistella/gitconfigrc",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/markbattistella/gitrc.git"
+		"url": "git+https://github.com/markbattistella/gitconfigrc.git"
 	},
 	"bugs": {
-		"url": "git+https://github.com/markbattistella/gitrc/issues"
+		"url": "git+https://github.com/markbattistella/gitconfigrc/issues"
 	},
 	"dependencies": {
 	},
