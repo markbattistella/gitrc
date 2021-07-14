@@ -7,8 +7,10 @@
 
 
 
+
+
 //
-// MARK: import the modules
+// MARK: import the modules / variables
 //
 
 // access file system
@@ -20,292 +22,370 @@ const os = require( 'os' );
 // access the path
 const path = require( 'path' );
 
+// get the .gitconfig file
+const GITCONFIG = (
+	process.env.GITCONFIG	||
+	path.join(
+		process.env.HOME	||
+		process.env.USERPROFILE, '.gitconfig'
+	)
+);
+
+// get the .gitconfigs directory
+const GITCONFIGS = (
+	process.env.GITCONFIGS	||
+	path.join(
+		process.env.HOME	||
+		process.env.USERPROFILE, '.gitconfigs'
+	)
+);
+
+// blank variables
+let options, name;
 
 
 
 
 
-
-
 //
-// MARK: - constants
+// MARK: - functions
 //
 
+// function: help display
+function listHelpMessage() {
+
+	// log the message to display
+	console.log(
+		"-----------------------------------------------" + "\n"   +
+		"------               gitrc               ------" + "\n"   +
+		"-----------------------------------------------" + "\n\n" +
+		"Easily switch between different gitconfig files" + "\n\n" +
+		"Usage:"                                          + "\n"   +
+		"  gitrc               List all profiles"         + "\n"   +
+		"  gitrc [name]        Switch to profile"         + "\n"   +
+		"  gitrc -n [name]     Create a new profile"      + "\n"   +
+		"  gitrc -d [name]     Delete the profile"        + "\n"   +
+		"  gitrc -h            Display this screen"       + "\n"
+	);
+
+	// successful exit
+	process.exit( 0 );
+}
+
+// function: list all configs
+function listAllConfigs() {
+
+	// list the title
+	console.log( "Available .gitconfig files:\n" );
+
+	// return the symbolic link value
+	fs.readlink( GITCONFIG, ( err, linkString ) => {
+
+		// get the symbolic link value
+		// -- returns the actual file name
+		linkString = linkString && path.basename( linkString );
+
+		// read the contents of the directory
+		fs.readdirSync( GITCONFIGS ).forEach( ( configurations ) => {
+			if( configurations[ 0 ] !== '.' ) {
+
+				// list the file names
+				// -- if the active config mark it
+				console.log(
+					' %s %s',
+					linkString == configurations ? '>' : ' ',
+					configurations
+				);
+			}
+		});
+	});
+}
+
+// function: check if existing file is symbolic
+function isConfigFileSymbolicLink( file ) {
+
+	// if the .gitconfig file is not a symbolic link file
+	if( !file.isSymbolicLink() ) {
+
+		// log the message to display
+		console.log(
+			'The current .gitconfig file (%s) is not a symbolic link. You may want to move this into %s.', GITCONFIG, GITCONFIGS
+		);
+
+		// unsuccessful exit
+		process.exit( 1 );
+	}
+}
+
+// function: create the symbolic link
+function createSymbolicLinkFile( name ) {
+
+	var ln = path.join( GITCONFIGS, name || '' ),
+		stat;
+
+	// if the file doesnt exist
+	if( ln == GITCONFIGS || !fs.existsSync( ln ) ) {
+		console.error( 'Couldn\'t find .gitconfig file: "%s"', name );
+
+		// exit out - unsuccessful
+		return process.exit( 1 )
+	}
+
+	//
+	try {
+		stat = fs.lstatSync( GITCONFIG );
+
+		// check if is symbolic link
+		isConfigFileSymbolicLink( stat );
+
+	// catch nothing
+	} catch( e ) {}
+
+	// if the config exists
+	if( stat ) {
+		console.log(
+			'Removing old .gitconfig (%s)',
+			path.basename( fs.readlinkSync( GITCONFIG ) )
+		);
+
+		// destroy the symbolic link
+		fs.unlinkSync( GITCONFIG );
+	}
+
+	// generate a new symbolic link
+	// -- display message
+	console.log(
+		'Activating .gitconfig: "%s"',
+		path.basename( ln )
+	);
+
+	// -- create the link
+	fs.symlinkSync( ln, GITCONFIG, 'file' );
+}
+
+// function: create new .gitconfig
+// -- gitrc -n [name]
+function createNewGitConfig() {
+
+	// no name provided
+	if( !name ) {
+		console.error( 'What do you want to call your new .gitconfig file?\n' );
+		console.error( 'Usage: gitrc -n [name]\n' );
+		return process.exit( 1 );
+	}
+
+	// get the pathway for creation
+	var newFilename = path.join( GITCONFIGS, name );
+
+	// that name is already exists
+	if( fs.existsSync( newFilename ) ) {
+		console.log(
+			'.gitconfig file "%s", already exists (%s/%s)',
+			name,
+			GITCONFIGS,
+			name
+		);
+
+		// exit - unsuccessful
+		return process.exit( 1 );
+	}
+
+	// write the file to the directory
+	fs.writeFileSync( newFilename, '' );
+}
+
+// function: delete selected .gitconfig
+// -- gitrc -d [name]
+function deleteGitConfig() {
+
+	// no name provided
+	if( !name ) {
+		console.error( 'What .gitconfig file did you want to delete?\n' );
+		console.error( 'Usage: gitrc -d [name]\n' );
+		return process.exit( 1 );
+	}
+
+	// get the pathway for deletion
+	let newFilename = path.join( GITCONFIGS, name );
+
+	// that name is exists
+	if( fs.existsSync( newFilename ) ) {
+		console.log(
+			'Deleting .gitconfig file "%s"\n',
+			name
+		);
+
+		// if the current active config is being deleted
+		if(
+			fs.existsSync( GITCONFIG ) &&
+			newFilename == fs.readlinkSync( GITCONFIG )
+		) {
+			console.log( 'Current active config is being deleted.\n' );
+			console.log( 'Remember to set a new one before use.\n' );
+
+			// delete the link
+			fs.unlinkSync( GITCONFIG );
+		}
+
+		// delete the file
+		fs.unlinkSync( newFilename );
+
+		// exit - successful
+		return process.exit( 0 );
+
+	// if no file found
+	} else {
+
+		// report if name doesnt exist
+		console.error(
+			'.gitconfig file with the name "%s" doesn\'t exist',
+			name
+		);
+
+		// exit - unsuccessful
+		return process.exit( 1 );
+	}
+}
 
 
 
 
 
+//
+// MARK: - self executed functions
+//
 
+// self-exe: get the command line arguments
+( function processCmdline() {
 
+	// get the options
+	// -- only use the first one
+	// -- since we are only creating, deleting, or helping at once
+	options = process.argv.slice( 2 ).map( (a) => {
+		return a[ 0 ] == '-' && a.replace( /^-+/, '' )[ 0 ];
+	}).filter( Boolean );
 
+	// first non '-' arg
+	// -- sets it as the "name" variable
+	name = process.argv.slice( 2 ).filter( (a) => {
+		return a[ 0 ] != '-';
+	})[ 0 ];
 
+ 	// other known options go here
+	options.filter( ( o ) => {
+		if( o == 'n' || o == 'd' || o == 'h' ) {
+			return false
+		} else {
+			console.error( 'Unknown option: -' + o );
+			return true
+		}
+	}).length && listHelpMessage();
 
+	// display the help message
+	if( options.indexOf( 'h' ) > -1 ) {
+		listHelpMessage();
+	}
+}());
 
+// self-exe: set up .gitconfigs directory if it doesn't exist
+( function createGitConfigDirectory() {
 
+	// try if the directory is set up and working
+	try {
 
+		// return information about file path
+		var stat = fs.statSync( GITCONFIGS );
 
-//
-//
-// const NPMRC_STORE = process.env.NPMRC_STORE || path.join(process.env.HOME || process.env.USERPROFILE, '.npmrcs')
-//     , NPMRC       = process.env.NPMRC || path.join(process.env.HOME || process.env.USERPROFILE, '.npmrc')
-//     , registries    = {
-//         au: 'http://registry.npmjs.org.au/'
-//       , eu: 'http://registry.npmjs.eu/'
-//       , cn: 'http://r.cnpmjs.org/'
-//       , defaultReg: 'https://registry.npmjs.org/'
-//     }
-//     , USAGE       = 'Usage:\n'
-//                   + '  npmrc                 list all profiles\n'
-//                   + '  npmrc [name]          change npmrc profile (uses fuzzy matching)\n'
-//                   + '  npmrc -c [name]       create a new npmrc profile called name\n'
-//                   + '  npmrc -r [registry]   use an npm mirror\n\n'
-//                   + 'Available mirrors for npmrc -r:\n'
-//                   + '  au      - Australian registry mirror\n'
-//                   + '  eu      - European registry mirror\n'
-//                   + '  cn      - Chinese registry mirror\n'
-//                   + '  default - Default registry\n'
-//
-// var opts
-//   , name
-//
-// function printUsage () {
-//   console.error(USAGE)
-//   process.exit(1)
-// }
-//
-//
-// function printHelp () {
-//   process.stdout.write(
-//       'npmrc\n'
-//     + '\n'
-//     + '  Switch between different .npmrc files with ease and grace.\n\n'
-//     + USAGE
-//     + '\n'
-//     + 'Example:\n\n'
-//     + '  # Creating and activating a new .npmrc called "work":\n'
-//     + '  $ npmrc -c work\n\n'
-//     + '  # Switch between "work" and "default"\n'
-//     + '  $ npmrc work\n'
-//     + '  $ npmrc default\n'
-//     + '  # Use the European npm mirror'
-//     + '  $ npmrc -r eu\n'
-//   )
-//   process.exit(1)
-// }
-//
-//
-// function printNpmrcs () {
-//   console.log('Available npmrcs:\n')
-//   fs.readlink(NPMRC, function (err, link) {
-//     link = link && path.basename(link)
-//     fs.readdirSync(NPMRC_STORE).forEach(function (npmrc) {
-//       if (npmrc[0] !== '.') {
-//         console.log(' %s %s', link == npmrc ? '*' : ' ', npmrc)
-//       }
-//     })
-//   })
-// }
-//
-//
-// // safety check so we don't go overwriting accidentally
-// function checkSymlink (stat) {
-//   if (!stat.isSymbolicLink()) {
-//     console.log('Current .npmrc (%s) is not a symlink. You may want to copy it into %s.', NPMRC, NPMRC_STORE)
-//     process.exit(1)
-//   }
-// }
-//
-// // make the symlink
-// function link (name) {
-//   var ln = path.join(NPMRC_STORE, name || '')
-//     , stat
-//
-//   if (ln == NPMRC_STORE || !fs.existsSync(ln)) {
-//     console.error('Couldn\'t find npmrc file "%s".', name)
-//     return process.exit(1)
-//   }
-//
-//   try {
-//     stat = fs.lstatSync(NPMRC)
-//     checkSymlink(stat)
-//   } catch (e) {}
-//
-//   if (stat) {
-//     console.log('Removing old .npmrc (%s)', path.basename(fs.readlinkSync(NPMRC)))
-//     fs.unlinkSync(NPMRC)
-//   }
-//
-//   console.log('Activating .npmrc "%s"', path.basename(ln))
-//   fs.symlinkSync(ln, NPMRC, 'file')
-// }
-//
-// // partial match npmrc names
-// function partialMatch(match, files) {
-//   files.sort() // own the sort order
-//
-//   // try exact match
-//   var exactMatch = files.filter(function(file) {
-//     return file === match
-//   }).shift()
-//   if (exactMatch) return exactMatch
-//
-//   // try starts with match
-//   var matchesStart = files.filter(function(file) {
-//     return file.indexOf(match) === 0
-//   }).shift()
-//   if (matchesStart) return matchesStart
-//
-//   // try whatever match
-//   var matchesAnything = files.filter(function(file) {
-//     return file.match(new RegExp(match))
-//   }).shift()
-//   if (matchesAnything) return matchesAnything
-// }
-//
-// // simplistic cmdline parser, sets "name" as the first non-'-' arg
-// // and sets "opts" as '-'-stripped characters (first char only)
-// ;(function processCmdline () {
-//   opts = process.argv.slice(2).map(function (a) {
-//     return a[0] == '-' && a.replace(/^-+/, '')[0]
-//   }).filter(Boolean)
-//
-//   name = process.argv.slice(2).filter(function (a) {
-//     return a[0] != '-'
-//   })[0] // first non '-' arg
-//
-//   opts.filter(function (o) {
-//     if (o == 'c' || o == 'h' || o == 'r' || o === 'registry') // other known opts go here
-//       return false
-//
-//     console.error('Unknown option: -' + o)
-//     return true
-//   }).length && printUsage()
-//
-//   if (opts.indexOf('h') > -1)
-//     printHelp()
-// }())
-//
-//
-// // set up .npmrcs if it doesn't exist
-// ;(function makeStore () {
-//   function make () {
-//     var def = path.join(NPMRC_STORE, 'default')
-//
-//     console.log('Initialising npmrc...')
-//     console.log('Creating %s', NPMRC_STORE)
-//
-//     fs.mkdirSync(NPMRC_STORE)
-//
-//     if (fs.existsSync(NPMRC)) {
-//       console.log('Making %s the default npmrc file', NPMRC)
-//       fs.renameSync(NPMRC, def)
-//     } else {
-//       fs.writeFileSync(def, '')
-//     }
-//
-//     link('default')
-//     process.exit(0)
-//   }
-//
-//   try {
-//     var stat = fs.statSync(NPMRC_STORE)
-//     if (!stat.isDirectory()) {
-//       console.error('Error: %s is not a directory', NPMRC_STORE)
-//       process.exit(1)
-//     }
-//   } catch (e) {
-//     make()
-//   }
-// }())
-//
-//
-// // no name and no args
-// if (!name && !opts.length)
-//   return printNpmrcs()
-//
-//
-// ;(function handleOPtions() {
-//   if (~opts.indexOf('c'))
-//     createNew()
-//   else if (~opts.indexOf('r') || ~opts.indexOf('registry'))
-//     replaceRegistry()
-// }())
-//
-// // handle -r <name>
-// function replaceRegistry() {
-//   if (!name) {
-//     console.error('Specify the registry you want to use')
-//     return printUsage()
-//   }
-//
-//   var registry = registries[(name === 'slow' || name === 'default') ? 'defaultReg' : name]
-//     , fileContents
-//
-//   try {
-//     fs.existsSync(NPMRC)
-//   } catch (e) {
-//     console.warn('Make sure a .npmrc file exits at %s.', NPMRC)
-//     process.exit(1)
-//   }
-//
-//   if (!registry) {
-//     console.error('%s value is not a valid registry name', name)
-//     printUsage()
-//   }
-//
-//   fileContents = fs.readFileSync(NPMRC, 'utf8').split(os.EOL)
-//
-//   for (var i = 0, l = fileContents.length; i <  l; i++) {
-//     if (~fileContents[i].indexOf('registry')) {
-//       fileContents[i] = 'registry = ' + registry
-//       break;
-//     }
-//   }
-//
-//   if (i === l)
-//     fileContents.unshift('registry = ' + registry)
-//   fs.writeFileSync(NPMRC, fileContents.join(os.EOL))
-//
-//   console.log('Using %s registry.', registry)
-//   process.exit(0)
-// }
-//
-// // handle -c <name>
-// function createNew () {
-//   if (!name) {
-//     console.error('What do you want to call your new npm configuration?')
-//     return printUsage()
-//   }
-//
-//   var c = path.join(NPMRC_STORE, name)
-//   if (fs.existsSync(c)) {
-//     console.log('npmrc file "%s", already exists (%s/%s)', name, NPMRC_STORE, name)
-//     return process.exit(1)
-//   }
-//
-//   fs.writeFileSync(c, '')
-// }
-//
-//
-// if (name) name = partialMatch(name, fs.readdirSync(NPMRC_STORE)) || name
-//
-// // sanity/safety check, also check if they want to switch
-// // to the already active one
-// ;(function checkExisting () {
-//   var stat
-//   try {
-//     stat = fs.lstatSync(NPMRC)
-//     checkSymlink(stat)
-//   } catch (e) {
-//     // ignore
-//   }
-//
-//   if (name && stat && fs.readlinkSync(NPMRC) == path.join(NPMRC_STORE, name)) {
-//     console.log('Current .npmrc (%s) is already "%s" (%s/%s)', NPMRC, name, NPMRC_STORE, name)
-//     return process.exit(0)
-//   }
-// }())
-//
-// // if we got here, then we're ready to switch
-// link(name)
+		// if it is not a directory
+		if( !stat.isDirectory() ) {
+
+			// log it
+			console.error( 'Error: %s is not a directory', GITCONFIGS );
+
+			// exit - unsuccessful
+			process.exit( 1 );
+		}
+
+	} catch( e ) {
+
+		//
+		var def = path.join( GITCONFIGS, 'default' );
+
+		// log the init
+		console.log( 'Initialising gitrc!' );
+		console.log( 'Creating directory: %s', GITCONFIGS );
+
+		// create the directory synchronously
+		fs.mkdirSync( GITCONFIGS );
+
+		// check if file already exists in the given path or not
+		if( fs.existsSync( GITCONFIG ) ) {
+
+			// log it
+			console.log( 'Making %s the default .gitconfig file', GITCONFIG );
+			fs.renameSync( GITCONFIG, def );
+
+		} else {
+
+			// creates a new file if the specified file does not exist
+			fs.writeFileSync( def, '' );
+		}
+
+		// run the symbolic link function
+		createSymbolicLinkFile( 'default' );
+
+		// exit - successful
+		process.exit( 0 );
+	}
+}());
+
+// no name and no args
+if( !name && !options.length ) {
+	return listAllConfigs();
+}
+
+// create the new config if option is selected
+if( ~options.indexOf( 'n' ) ) {
+	createNewGitConfig();
+}
+
+// create the new config if option is selected
+if( ~options.indexOf( 'd' ) ) {
+	deleteGitConfig();
+}
+
+// self-exe: check if the switch is required
+( function checkExistingConfiguration() {
+
+	var stat;
+
+	try {
+		stat = fs.lstatSync( GITCONFIG );
+		isConfigFileSymbolicLink( stat );
+
+	// no errors
+	} catch( e ) {}
+
+	// selected one is already active
+	if(
+		name &&
+		stat &&
+		fs.readlinkSync( GITCONFIG ) == path.join( GITCONFIGS, name )
+	) {
+
+		// log it to user
+		console.log(
+			'Current .gitconfig (%s) is already "%s" (%s/%s)',
+			GITCONFIG,
+			name,
+			GITCONFIGS,
+			name
+		);
+
+		// exit - successful
+		return process.exit( 0 );
+	}
+}());
+
+// switch to the config
+createSymbolicLinkFile( name );

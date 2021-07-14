@@ -15,7 +15,9 @@
 	},
 	"dependencies": {
 	},
-	"scripts": {},
+	"scripts": {
+		"test": "node ./gitrc.js"
+	},
 	"bin": {
 		"gitrc": "./gitrc.js"
 	},
