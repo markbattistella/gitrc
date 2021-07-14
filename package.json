@@ -1,7 +1,7 @@
 {
 	"name": "@markbattistella/gitrc",
 	"description": "Change between different .gitconfig files",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"main": "./gitrc.js",
 	"author": "Mark Battistella (https://twitter.com/markbattistella)",
 	"license": "MIT",
