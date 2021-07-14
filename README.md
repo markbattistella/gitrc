@@ -4,7 +4,7 @@
 
 <small><em>easily switch between `.gitconfig` files</em></small>
 
-![Github2npm](https://github.com/markbattistella/gitrc/workflows/gh2npm/badge.svg?event=registry_package) ![npm (scoped)](https://img.shields.io/npm/v/@markbattistella/gitrc) ![GitHub](https://img.shields.io/github/license/markbattistella/gitrc) ![npm bundle size (scoped)](https://img.shields.io/bundlephobia/minzip/@markbattistella/gitrc)
+![Github2npm](https://github.com/markbattistella/gitrc/workflows/gh2npm/badge.svg?event=registry_package) ![npm (scoped)](https://img.shields.io/npm/v/@markbattistella/gitrc) ![GitHub](https://img.shields.io/github/license/markbattistella/gitrc)
 
 ---
 
@@ -106,7 +106,7 @@ MIT - a copy is included with the source.
 
 Again I want to thank:
 
-- Conrad [github](https://github.com/deoxxa/) - *creator of npmrc*
+- Conrad ([github](https://github.com/deoxxa/)) - *author of npmrc*
 
 And all the people that helped on that project:
 
