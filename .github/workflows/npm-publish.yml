@@ -16,3 +16,4 @@ jobs:
         with:
           token: ${{ secrets.NPM_AUTH_TOKEN }}
           check-version: false
+          access: public
